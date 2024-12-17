@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,12 +12,10 @@ import (
 func BlogCreate(c *gin.Context) {
 	userID := c.GetHeader("UserID")
 
-	fmt.Println("userID", userID)
 	// Define a request body struct
 	type BlogRequest struct {
 		Title   string `json:"title" binding:"required"`
 		Content string `json:"content" binding:"required"`
-		// AuthorID string `json:"author_id" binding:"required"`
 	}
 
 	var req BlogRequest
@@ -37,7 +34,6 @@ func BlogCreate(c *gin.Context) {
 		AuthorID: userID,
 	}
 
-	fmt.Println("blog: ", blog)
 	// Save the blog to the database
 	if err := initializers.DB.Create(&blog).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create blog", "details": err.Error()})
@@ -80,8 +76,27 @@ func Blog(c *gin.Context) {
 }
 
 func BlogUpdate(c *gin.Context) {
+	slug := c.Param("slug")
+	var blog models.Blog
 
-	c.JSON(http.StatusOK, gin.H{})
+	if err := initializers.DB.Where("slug = ?", slug).First(&blog).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Blog not found",
+		})
+		return
+	}
+
+	var req map[string]interface{}
+	c.Bind(&req)
+
+	if err := initializers.DB.Model(&blog).Updates(&req).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upate blog", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Blog updated successfully",
+	})
 }
 
 func BlogDelete(c *gin.Context) {

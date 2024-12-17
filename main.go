@@ -23,6 +23,8 @@ func main() {
 	r.PUT("/blog/:slug", controllers.BlogUpdate)
 	r.DELETE("/blog/:slug", controllers.BlogDelete)
 
+	// Files Upload
+	r.POST("/fileUpload", controllers.HandleFileUpload)
 	// Protected routes
 	protected := r.Group("/protected")
 	protected.Use(controllers.JWTMiddleware())
