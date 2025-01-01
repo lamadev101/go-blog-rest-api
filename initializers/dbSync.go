@@ -14,7 +14,7 @@ func DbSync() {
 	}
 
 	// AutoMigrate to sync the models with the database
-	if err := DB.AutoMigrate(&models.Blog{}, &models.User{}); err != nil {
+	if err := DB.AutoMigrate(&models.Blog{}, &models.User{}, &models.Category{}); err != nil {
 		log.Fatalf("Error during AutoMigrate: %v", err)
 	} else {
 		log.Println("Database schema synced successfully!")

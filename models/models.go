@@ -18,15 +18,27 @@ type User struct {
 	UpdatedAt time.Time
 }
 
-type Blog struct {
+type Category struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
-	Title     string    `gorm:"type:varchar(200);not null"`
-	Slug      string    `gorm:"type:varchar(200);unique;not null"`
-	Content   string    `gorm:"type:text;not null"`
-	AuthorID  string    `gorm:"type:uuid;not null"` // Foreign key
-	Author    User      `gorm:"foreignKey:AuthorID"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Name      string    `gorm:"type:varchar(100);not null"`
+	IsActive  bool      `gorm:"default:true"`
+	SortOrder int       `gorm:"default:0"`
+	Blogs     []Blog    `gorm:"foreignKey:CategoryId;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+}
+
+type Blog struct {
+	ID         uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
+	Title      string    `gorm:"type:varchar(200);not null"`
+	Slug       string    `gorm:"type:varchar(200);unique;not null"`
+	Content    string    `gorm:"type:text;not null"`
+	AuthorID   string    `gorm:"type:uuid;not null"` // Foreign key
+	Author     User      `gorm:"foreignKey:AuthorID"`
+	CategoryId string    `gorm:"type:uuid;null"`
+	Category   Category  `grom:"foreignKey:CategoryId"`
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 func (b *Blog) BeforeCreate(tx *gorm.DB) (err error) {

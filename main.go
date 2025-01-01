@@ -17,6 +17,12 @@ func main() {
 	r.POST("/register", controllers.Register)
 	r.POST("/login", controllers.Login)
 
+	// Category
+	r.POST("/category", controllers.CategoryCreate)
+	r.GET("/categories", controllers.Categories)
+	r.DELETE("/category/:id", controllers.CategoryDelete)
+
+	// Blogs
 	r.POST("/blog", controllers.BlogCreate)
 	r.GET("/blog/:slug", controllers.Blog)
 	r.GET("/blogs", controllers.Blogs)
