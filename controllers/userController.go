@@ -48,11 +48,17 @@ func GenerateJWT(userID string) (string, error) {
 	return token.SignedString(jwtSecret)
 }
 
+// ============================================================= Route Functions =============================
 // Register handles user registration
 func Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := initializers.DB.Where("email = ?", req.Email).First(&models.User{}).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
 		return
 	}
 
@@ -100,59 +106,31 @@ func Login(c *gin.Context) {
 	}
 
 	// Generate a JWT token
-	token, err := GenerateJWT(user.ID.String())
+	tokenString, err := GenerateJWT(user.ID.String())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
 
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("Authorization", tokenString, 3600, "", "", false, true)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login successful",
-		"token":   token,
+		"token":   tokenString,
 	})
 }
 
 // ProtectedRoute demonstrates a protected route
 func ProtectedRoute(c *gin.Context) {
-	userID, exists := c.Get("userID")
+	user, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Welcome to the protected route!", "userID": userID})
-}
-
-// JWTMiddleware validates the JWT token
-func JWTMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		tokenString := c.GetHeader("Authorization")
-		if tokenString == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token not provided"})
-			c.Abort()
-			return
-		}
-
-		claims := &jwt.MapClaims{}
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			return jwtSecret, nil
-		})
-
-		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-			c.Abort()
-			return
-		}
-
-		// Extract userID from claims and set it in the context
-		if userID, ok := (*claims)["sub"].(string); ok {
-			c.Set("userID", userID)
-		} else {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-			c.Abort()
-			return
-		}
-
-		c.Next()
-	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Welcome to the protected route!",
+		"user":    user,
+	})
 }

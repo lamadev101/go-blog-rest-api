@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lamadev101/blog-rest-api/controllers"
 	"github.com/lamadev101/blog-rest-api/initializers"
+	"github.com/lamadev101/blog-rest-api/middleware"
 )
 
 func init() {
@@ -32,9 +33,11 @@ func main() {
 	// Files Upload
 	r.POST("/fileUpload", controllers.HandleFileUpload)
 	// Protected routes
-	protected := r.Group("/protected")
-	protected.Use(controllers.JWTMiddleware())
-	protected.GET("/welcome", controllers.ProtectedRoute)
+	r.GET("/welcome", middleware.RequireAuth, controllers.ProtectedRoute)
+	// r.GET("/welcome", controllers.ProtectedRoute)
+
+	// protected := r.Group("/protected")
+	// protected.Use(controllers.JWTMiddleware())
 
 	r.Run(":8080")
 }
